@@ -1,0 +1,135 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+struct Version {
+    int versionID;
+    string timestamp;
+    string projectName;
+    Version *left, *right;
+};
+
+class VersionControlBST {
+private:
+    Version* root;
+
+    Version* createNode(int id, string time, string project) {
+        Version* v = new Version();
+        v->versionID = id;
+        v->timestamp = time;
+        v->projectName = project;
+        v->left = v->right = NULL;
+        return v;
+    }
+
+    Version* insert(Version* node, int id, string time, string project) {
+        if (node == NULL)
+            return createNode(id, time, project);
+
+        if (id < node->versionID)
+            node->left = insert(node->left, id, time, project);
+        else if (id > node->versionID)
+            node->right = insert(node->right, id, time, project);
+
+        return node;
+    }
+
+    Version* search(Version* node, int id) {
+        if (node == NULL || node->versionID == id)
+            return node;
+        if (id < node->versionID)
+            return search(node->left, id);
+        return search(node->right, id);
+    }
+
+    Version* findMin(Version* node) {
+        while (node && node->left != NULL)
+            node = node->left;
+        return node;
+    }
+
+    Version* deleteNode(Version* node, int id) {
+        if (node == NULL) return node;
+
+        if (id < node->versionID)
+            node->left = deleteNode(node->left, id);
+        else if (id > node->versionID)
+            node->right = deleteNode(node->right, id);
+        else {
+            if (node->left == NULL) {
+                Version* temp = node->right;
+                delete node;
+                return temp;
+            }
+            else if (node->right == NULL) {
+                Version* temp = node->left;
+                delete node;
+                return temp;
+            }
+            Version* temp = findMin(node->right);
+            node->versionID = temp->versionID;
+            node->timestamp = temp->timestamp;
+            node->projectName = temp->projectName;
+            node->right = deleteNode(node->right, temp->versionID);
+        }
+        return node;
+    }
+
+public:
+    VersionControlBST() {
+        root = NULL;
+    }
+
+    void commit(int id, string time, string project) {
+        root = insert(root, id, time, project);
+        cout << "Version committed.\n";
+    }
+
+    void checkout(int id) {
+        Version* v = search(root, id);
+        if (v)
+            cout << "Version " << v->versionID << " | "
+                 << v->projectName << " | "
+                 << v->timestamp << endl;
+        else
+            cout << "Version not found.\n";
+    }
+
+    void rollback(int id) {
+        root = deleteNode(root, id);
+        cout << "Version rolled back if existed.\n";
+    }
+};
+
+int main() {
+    VersionControlBST vcs;
+    int choice;
+
+    do {
+        cout << "\n1.Commit Version\n2.Checkout Version\n3.Rollback Version\n0.Exit\nChoice: ";
+        cin >> choice;
+
+        if (choice == 1) {
+            int id;
+            string time, project;
+            cout << "VersionID Timestamp ProjectName: ";
+            cin >> id >> time >> project;
+            vcs.commit(id, time, project);
+        }
+        else if (choice == 2) {
+            int id;
+            cout << "Enter VersionID: ";
+            cin >> id;
+            vcs.checkout(id);
+        }
+        else if (choice == 3) {
+            int id;
+            cout << "Enter VersionID: ";
+            cin >> id;
+            vcs.rollback(id);
+        }
+
+    } while (choice != 0);
+
+    return 0;
+}
